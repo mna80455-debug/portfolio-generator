@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>Portfolio Generator — اصنع Portfolio احترافي في دقيقتين</title>
+  <meta name="description"
+    content="أداة مجانية لإنشاء Portfolio و CV احترافي بالذكاء الاصطناعي. اختر من 6 قوالب، صدّر PDF، واحصل على ATS Score." />
+  <meta name="keywords"
+    content="portfolio generator, CV builder, resume, ذكاء اصطناعي, سيرة ذاتية" />
+  <meta name="author" content="Portfolio Generator" />
+
+  <!-- Open Graph (for WhatsApp / Facebook sharing) -->
+  <meta property="og:title" content="Portfolio Generator" />
+  <meta property="og:description" content="اصنع Portfolio احترافي في دقيقتين" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yourusername.github.io/portfolio-generator" />
+  <meta property="og:image" content="https://yourusername.github.io/portfolio-generator/preview.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Portfolio Generator" />
+  <meta name="twitter:description" content="اصنع Portfolio احترافي في دقيقتين" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Loader -->
+  <div id="appLoader" class="app-loader">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <p class="loader-text">جاري التحميل...</p>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-logo">
+        <h1><span>⚡</span> Portfolio Generator</h1>
+        <p>Fill in your details. Pick a template. Download your portfolio.</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar-container" id="progressContainer">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-text" id="progressText">0%</span>
+  </div>
+
+  <main class="app-container">
+    <!-- =================== FORM COLUMN =================== -->
+    <div class="form-column" id="formColumn">
+
+      <!-- Shared Portfolio Banner -->
+      <div id="sharedBanner" class="shared-banner" style="display:none">
+        <span>👀 You're viewing a shared Portfolio</span>
+        <button type="button" onclick="window._clearSharedPortfolio()">Start Fresh</button>
+      </div>
+
+
+      <!-- Profile Type Selector -->
+      <div class="form-section">
+        <div class="profile-type-selector">
+          <div class="profile-type-label">أنا...</div>
+          <div class="profile-types">
+            <button class="profile-type-btn active" data-type="developer" onclick="setProfileType('developer')" type="button">💻 Developer</button>
+            <button class="profile-type-btn" data-type="student" onclick="setProfileType('student')" type="button">🎓 طالب</button>
+            <button class="profile-type-btn" data-type="designer" onclick="setProfileType('designer')" type="button">🎨 Designer</button>
+            <button class="profile-type-btn" data-type="freelancer" onclick="setProfileType('freelancer')" type="button">🚀 Freelancer</button>
+          </div>
+          <div id="profileTips" class="profile-tips"><div class="profile-tip">💡 أضيفي GitHub Stats</div><div class="profile-tip">💡 اذكري الـ frameworks</div><div class="profile-tip">💡 أضيفي مشاريع Open Source</div></div>
+        </div>
+      </div>
+
+      <!-- Section 1: Personal Info -->
+      <div class="form-section" id="sectionPersonal">
+        <div class="section-header" data-section="personal">
+          <div class="section-icon">👤</div>
+          <span class="section-title">Personal Info</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyPersonal">
+          <div class="field">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" class="form-input" placeholder="e.g. Sarah Ahmed" required>
+            <p class="error-message" id="errorName">Name is required.</p>
+          </div>
+          <div class="field">
+            <label for="jobTitle">Job Title</label>
+            <input type="text" id="jobTitle" class="form-input" placeholder="e.g. Frontend Developer">
+          </div>
+          <div class="field">
+            <div class="bio-header">
+              <label for="bio">Short Bio</label>
+              <button type="button" class="btn-ai" id="aiBioBtn">
+                <span class="ai-icon">✨</span>
+                <span class="ai-text">Write with AI</span>
+              </button>
+            </div>
+            <textarea id="bio" class="form-input" maxlength="300" placeholder="Tell the world about yourself…"></textarea>
+            <div class="char-count"><span id="bioCount">0</span>/300</div>
+          </div>
+          <!-- Photo Upload -->
+          <div class="field">
+            <label>Profile Photo</label>
+            <div class="photo-upload-area" id="photoUploadArea">
+              <div class="upload-placeholder" id="uploadPlaceholder">
+                <div class="upload-icon">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                </div>
+                <p class="upload-label">Drag your photo here</p>
+                <p class="upload-sub">or click to choose</p>
+                <span class="upload-hint">PNG, JPG up to 5MB</span>
+              </div>
+              <img id="photoPreviewImg" class="photo-preview-img" alt="Profile photo preview" style="display:none" />
+              <button class="remove-photo-btn" id="removePhotoBtn" type="button" style="display:none" aria-label="Remove photo">✕</button>
+              <input type="file" id="photoInput" accept="image/*" style="display:none" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="location">Location</label>
+            <input type="text" id="location" class="form-input" placeholder="e.g. Cairo, Egypt">
+          </div>
+          <div class="field">
+            <label for="email">Email *</label>
+            <input type="email" id="email" class="form-input" placeholder="you@example.com">
+            <p class="error-message" id="errorEmail">Please enter a valid email.</p>
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" class="form-input" placeholder="+1 234 567 890">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Skills -->
+      <div class="form-section" id="sectionSkills">
+        <div class="section-header" data-section="skills">
+          <div class="section-icon">🛠️</div>
+          <span class="section-title">Skills</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodySkills">
+          <div class="field" id="skillsField">
+            <label>Add Skills (Enter or comma)</label>
+            <div class="skills-input-wrapper" id="skillsWrapper">
+              <input type="text" id="skillInput" placeholder="Type a skill…" aria-label="Skill input">
+            </div>
+            <p class="error-message" id="errorSkills">Please add at least one skill.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Education -->
+      <div class="form-section" id="sectionEducation">
+        <div class="section-header" data-section="education">
+          <div class="section-icon">🎓</div>
+          <span class="section-title">Education</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyEducation">
+          <div id="educationContainer"></div>
+          <button class="btn-add-block" id="addEduBtn" type="button">＋ Add Education</button>
+        </div>
+      </div>
+
+      <!-- Section 4: Work Experience -->
+      <div class="form-section" id="sectionExperience">
+        <div class="section-header" data-section="experience">
+          <div class="section-icon">💼</div>
+          <span class="section-title">Experience</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyExperience">
+          <div id="experienceContainer"></div>
+          <button class="btn-add-block" id="addExpBtn" type="button">＋ Add Experience</button>
+        </div>
+      </div>
+
+      <!-- Section 5: Projects -->
+      <div class="form-section" id="sectionProjects">
+        <div class="section-header" data-section="projects">
+          <div class="section-icon">🚀</div>
+          <span class="section-title">Projects</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyProjects">
+          <div id="projectsContainer"></div>
+          <button class="btn-add-block" id="addProjectBtn" type="button">＋ Add Project</button>
+        </div>
+      </div>
+
+      <!-- Section 6: Languages -->
+      <div class="form-section" id="sectionLanguages">
+        <div class="section-header" data-section="languages">
+          <div class="section-icon">🌍</div>
+          <span class="section-title">Languages</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyLanguages">
+          <div id="languagesContainer"></div>
+          <button class="btn-add-block" id="addLangBtn" type="button">＋ Add Language</button>
+        </div>
+      </div>
+
+      <!-- Section 7: Achievements -->
+      <div class="form-section" id="sectionAchievements">
+        <div class="section-header" data-section="achievements">
+          <div class="section-icon">🏆</div>
+          <span class="section-title">Achievements</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyAchievements">
+          <div id="achievementsContainer"></div>
+          <button class="btn-add-block" id="addAchBtn" type="button">＋ Add Achievement</button>
+        </div>
+      </div>
+
+      <!-- Section 8: Social Links -->
+      <div class="form-section" id="sectionSocial">
+        <div class="section-header" data-section="social">
+          <div class="section-icon">🔗</div>
+          <span class="section-title">Social Links</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodySocial">
+          <div class="field">
+            <label for="github">GitHub</label>
+            <input type="url" id="github" class="form-input" placeholder="https://github.com/you">
+            <div id="githubStatsPreview" style="display:none; margin-top:8px"></div>
+          </div>
+          <div class="field">
+            <label for="linkedin">LinkedIn</label>
+            <input type="url" id="linkedin" class="form-input" placeholder="https://linkedin.com/in/you">
+          </div>
+          <div class="field">
+            <label for="twitter">Twitter / X</label>
+            <input type="url" id="twitter" class="form-input" placeholder="https://x.com/you">
+          </div>
+          <div class="field">
+            <label for="website">Portfolio / Website</label>
+            <input type="url" id="website" class="form-input" placeholder="https://yoursite.com">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 9: Customization -->
+      <div class="form-section" id="sectionCustomize">
+        <div class="section-header" data-section="customize">
+          <div class="section-icon">🎨</div>
+          <span class="section-title">Customization</span>
+          <span class="section-header-toggle" aria-hidden="true">▼</span>
+        </div>
+        <div class="section-body" id="bodyCustomize">
+          <!-- Output Type Selector -->
+          <div class="output-type-selector" id="outputTypeSelector">
+            <button class="output-btn active" data-type="portfolio" type="button">
+              <span class="output-icon">🌐</span>
+              <div><strong>Portfolio</strong><small>Professional website</small></div>
+            </button>
+            <button class="output-btn" data-type="cv" type="button">
+              <span class="output-icon">📄</span>
+              <div><strong>CV / Resume</strong><small>Print-ready document</small></div>
+            </button>
+          </div>
+          <div class="field">
+            <label>Template</label>
+            <div class="template-grid" id="templateGrid"></div>
+          </div>
+          <div class="field">
+            <label for="primaryColor">Accent Color</label>
+            <div class="color-picker-row">
+              <input type="color" id="primaryColor" value="#63B3ED">
+              <span id="colorHex">#63B3ED</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fontSelect">Font Family</label>
+            <select id="fontSelect" class="form-input">
+              <option value="Inter" selected>Inter</option>
+              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+              <option value="DM Sans">DM Sans</option>
+              <option value="Poppins">Poppins</option>
+            </select>
+          </div>
+          <!-- Language Toggle -->
+          <div class="lang-toggle">
+            <span class="lang-label">لغة الـ CV:</span>
+            <div class="lang-buttons">
+              <button class="lang-btn active" data-lang="ar" onclick="setLanguage('ar')" type="button">🇪🇬 عربي</button>
+              <button class="lang-btn" data-lang="en" onclick="setLanguage('en')" type="button">🇺🇸 English</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="padding:0;">
+        <button class="btn-generate" id="generateBtn" type="button">✨ Generate Portfolio</button>
+        <div class="actions-row">
+          <button class="btn-secondary hidden" id="downloadBtn" type="button">⬇ Download HTML</button>
+          <button class="btn-secondary hidden" id="downloadPdfBtn" type="button">🖨 Print / PDF</button>
+          <button class="btn-ghost" id="resetBtn" type="button">↺ Reset</button>
+        </div>
+
+        <!-- Export Panel -->
+        <div class="export-panel" style="margin-top:12px">
+          <div class="export-title">📤 تصدير</div>
+          <div class="export-buttons">
+            <button class="export-btn" onclick="exportHTML()" type="button"><span class="export-icon">🌐</span><span class="export-label">HTML</span><span class="export-sub">للنشر</span></button>
+            <button class="export-btn" onclick="exportPDF()" type="button"><span class="export-icon">📄</span><span class="export-label">PDF</span><span class="export-sub">للطباعة</span></button>
+            <button class="export-btn" onclick="exportJSON()" type="button"><span class="export-icon">{ }</span><span class="export-label">JSON</span><span class="export-sub">للتصدير</span></button>
+            <button class="export-btn import-btn" onclick="triggerImportJSON()" type="button">
+              <span class="export-icon">📦</span>
+              <span class="export-label">Import</span>
+              <span class="export-sub">من JSON</span>
+            </button>
+            <input type="file" id="jsonImportInput" accept=".json" style="display:none" onchange="handleJSONImport(event)" />
+            <button class="export-btn" onclick="exportTXT()" type="button"><span class="export-icon">📝</span><span class="export-label">TXT</span><span class="export-sub">للـ ATS</span></button>
+          </div>
+        </div>
+
+        <!-- Share Box -->
+        <div id="shareBox" class="share-box" style="display:none">
+          <span class="share-label">🔗 Portfolio Link</span>
+          <div class="share-input-row">
+            <input id="shareUrl" type="text" readonly class="share-url-input" />
+            <button type="button" class="btn-copy" id="copyShareBtn">Copy</button>
+          </div>
+          <p class="share-note">Anyone with this link can view your portfolio directly</p>
+          
+          <!-- QR Code Section -->
+          <div class="qr-section" id="qrSection" style="display:none">
+            <div class="qr-label">📱 QR Code للمشاركة السريعة</div>
+            <div class="qr-container">
+              <img id="qrCodeImg" class="qr-image" alt="QR Code" />
+              <div class="qr-actions">
+                <button class="qr-btn" onclick="downloadQRCode()" type="button">⬇️ تنزيل</button>
+                <p class="qr-tip">اسكانه بالموبايل للوصول المباشر</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio Score -->
+        <div class="score-card" id="scoreCard">
+          <div class="score-header">
+            <span class="score-title">Portfolio Strength</span>
+            <div class="score-value">
+              <span id="scoreNumber">0</span>
+              <span class="score-max">/100</span>
+              <span id="scoreLabel" class="score-label">Beginner</span>
+            </div>
+          </div>
+          <div class="score-bar-bg">
+            <div id="scoreBar" class="score-bar-fill"></div>
+          </div>
+          <div id="scoreTips" class="score-tips"></div>
+        </div>
+
+        <!-- ATS Score Analyzer -->
+        <button class="btn-ats" onclick="analyzeATS()" id="atsBtn" type="button">🤖 تحليل ATS Score</button>
+        <div id="atsPanel" style="display:none"></div>
+
+        <!-- JD Matcher -->
+        <div class="jd-matcher-panel">
+          <div class="jd-header" onclick="toggleJDMatcher()">
+            <span>🎯 Job Description Matcher</span>
+            <span class="jd-badge" id="jdMatchBadge" style="display:none">0%</span>
+            <span class="jd-arrow">▼</span>
+          </div>
+          <div id="jdMatcherBody" class="jd-body" style="display:none">
+            <textarea id="jobDescInput" class="jd-textarea" placeholder="الصق هنا الـ Job Description من LinkedIn أو أي موقع..."></textarea>
+            <div class="jd-actions-group">
+              <button class="btn-match" onclick="matchJobDescription()" type="button">🎯 تحليل التطابق</button>
+              <button class="btn-coverletter" onclick="generateCoverLetter()" id="coverLetterBtn" type="button">💌 اكتب Cover Letter</button>
+            </div>
+            <div id="jdResults" style="display:none"></div>
+            <div id="coverLetterPanel" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- Interview Prep -->
+        <button class="btn-interview" onclick="generateInterviewPrep()" id="interviewBtn" type="button">🎤 جهزني للـ Interview</button>
+        <div id="interviewPanel" style="display:none"></div>
+
+        <!-- Version History -->
+        <div class="version-panel" id="versionPanel">
+          <div class="version-header" id="versionHeaderBtn">
+            <span>🕐 Version History</span>
+            <span id="versionCount" class="version-badge">0</span>
+            <span class="version-arrow" id="versionArrow">▼</span>
+          </div>
+          <div id="versionList" class="version-list hidden"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================== PREVIEW COLUMN =================== -->
+    <div class="preview-column" id="previewColumn">
+      <div class="preview-label"><span class="dot"></span> Live Preview</div>
+      <div class="preview-frame-wrapper">
+        <iframe id="previewFrame" title="Portfolio Preview" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Mobile Tab Bar -->
+  <nav class="mobile-tabs" id="mobileTabs">
+    <button class="tab-btn active" data-tab="form" type="button">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>Edit</span>
+    </button>
+    <button class="tab-btn" data-tab="preview" type="button">
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Preview</span>
+    </button>
+    <button class="tab-btn" data-tab="download" type="button">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Export</span>
+    </button>
+  </nav>
+
+  <!-- Template scripts -->
+  <script src="templates/modern.js"></script>
+  <script src="templates/minimal.js"></script>
+  <script src="templates/bold.js"></script>
+  <script src="templates/aurora.js"></script>
+  <script src="templates/terminal.js"></script>
+  <script src="templates/magazine.js"></script>
+  <script src="templates/cv-classic.js"></script>
+  <script src="templates/cv-modern.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
