@@ -3,6 +3,11 @@
 function generateCVModernHTML(data, accentColor, font) {
   var ac = accentColor || '#63B3ED';
   var e = _escCM;
+  var lang = data.language || 'ar';
+  var labels = {
+    en: { contact: 'Contact', online: 'Online', edu: 'Education', exp: 'Experience', skills: 'Skills', proj: 'Projects', lang: 'Languages', ach: 'Achievements', summary: 'About Me' },
+    ar: { contact: 'معلومات التواصل', online: 'روابط أونلاين', edu: 'التعليم', exp: 'الخبرة العملية', skills: 'المهارات', proj: 'المشاريع', lang: 'اللغات', ach: 'الإنجازات', summary: 'نبذة شخصية' }
+  }[lang];
 
   var photo = data.photo
     ? '<img class="cv-photo" src="' + e(data.photo) + '" alt="' + e(data.name) + '" />'
@@ -25,10 +30,14 @@ function generateCVModernHTML(data, accentColor, font) {
     return '<div class="sidebar-item">✦ ' + e(a.title) + (a.issuer ? ' — ' + e(a.issuer) : '') + '</div>';
   }).join('');
 
-  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + e(data.name) + ' — CV</title>'
+  return '<!DOCTYPE html><html lang="' + lang + '" dir="' + (lang === 'ar' ? 'rtl' : 'ltr') + '"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + e(data.name) + ' — CV</title>'
     + '<style>'
     + '*{margin:0;padding:0;box-sizing:border-box}'
-    + 'body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10pt;color:#2d3748;background:white;display:grid;grid-template-columns:240px 1fr;min-height:100vh}'
+    + 'body{font-family:"' + font + '",sans-serif;color:#2d3748;background:white;display:grid;grid-template-columns:240px 1fr;min-height:100vh;'
+    + 'font-size:' + (data.fontSize || 10) + 'pt;'
+    + 'line-height:' + (data.lineHeight || 1.7) + ';'
+    + 'font-weight:' + (data.fontWeight || 400) + ';'
+    + 'letter-spacing:' + (data.letterSpacing || 0) + 'px;}'
     + 'a{color:' + ac + ';text-decoration:none;font-weight:500}'
     + '.cv-sidebar{background:#1a202c;color:white;padding:32px 24px}'
     + '.cv-photo{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid ' + ac + ';display:block;margin:0 auto 16px}'
@@ -63,7 +72,7 @@ function generateCVModernHTML(data, accentColor, font) {
     + '<div class="sidebar-name">' + e(data.name||'Your Name') + '</div>'
     + '<div class="sidebar-title">' + e(data.jobTitle||'Your Title') + '</div>'
 
-    + '<div class="sidebar-section"><div class="sidebar-section-title">Contact</div>'
+    + '<div class="sidebar-section"><div class="sidebar-section-title">' + labels.contact + '</div>'
     + (data.email ? '<div class="sidebar-item">📧 ' + e(data.email) + '</div>' : '')
     + (data.phone ? '<div class="sidebar-item">📱 ' + e(data.phone) + '</div>' : '')
     + (data.location ? '<div class="sidebar-item">📍 ' + e(data.location) + '</div>' : '')
@@ -75,16 +84,16 @@ function generateCVModernHTML(data, accentColor, font) {
     + (data.linkedin ? '<div class="sidebar-item">💼 LinkedIn</div>' : '')
     + '</div>' : '')
 
-    + (skills ? '<div class="sidebar-section"><div class="sidebar-section-title">Skills</div><div>' + skills + '</div></div>' : '')
-    + (languages ? '<div class="sidebar-section"><div class="sidebar-section-title">Languages</div>' + languages + '</div>' : '')
-    + (achievements ? '<div class="sidebar-section"><div class="sidebar-section-title">Achievements</div>' + achievements + '</div>' : '')
+    + (skills ? '<div class="sidebar-section"><div class="sidebar-section-title">' + labels.skills + '</div><div>' + skills + '</div></div>' : '')
+    + (languages ? '<div class="sidebar-section"><div class="sidebar-section-title">' + labels.lang + '</div>' + languages + '</div>' : '')
+    + (achievements ? '<div class="sidebar-section"><div class="sidebar-section-title">' + labels.ach + '</div>' + achievements + '</div>' : '')
     + '</aside>'
 
     + '<main class="cv-main">'
-    + (data.bio ? '<section class="main-section"><div class="main-section-title">About Me</div><p class="cv-bio-text">' + e(data.bio) + '</p></section>' : '')
-    + (education ? '<section class="main-section"><div class="main-section-title">Education</div>' + education + '</section>' : '')
-    + (experience ? '<section class="main-section"><div class="main-section-title">Experience</div>' + experience + '</section>' : '')
-    + (projects ? '<section class="main-section"><div class="main-section-title">Projects</div>' + projects + '</section>' : '')
+    + (data.bio ? '<section class="main-section"><div class="main-section-title">' + labels.summary + '</div><p class="cv-bio-text">' + e(data.bio) + '</p></section>' : '')
+    + (education ? '<section class="main-section"><div class="main-section-title">' + labels.edu + '</div>' + education + '</section>' : '')
+    + (experience ? '<section class="main-section"><div class="main-section-title">' + labels.exp + '</div>' + experience + '</section>' : '')
+    + (projects ? '<section class="main-section"><div class="main-section-title">' + labels.proj + '</div>' + projects + '</section>' : '')
     + '</main>'
 
     + '</body></html>';

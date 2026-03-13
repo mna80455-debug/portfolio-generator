@@ -31,7 +31,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;700&family=Outfit:wght@300;400;600;800&family=Playfair+Display:wght@400;700;900&family=Syne:wght@400;700;800&family=Lora:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Lexend:wght@300;400;600&family=Montserrat:wght@300;400;700;900&family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -69,7 +69,7 @@
     <div class="form-column" id="formColumn">
 
       <!-- Shared Portfolio Banner -->
-      <div id="sharedBanner" class="shared-banner" style="display:none">
+      <div id="sharedBanner" class="shared-banner hidden">
         <span>👀 You're viewing a shared Portfolio</span>
         <button type="button" onclick="window._clearSharedPortfolio()">Start Fresh</button>
       </div>
@@ -129,9 +129,9 @@
                 <p class="upload-sub">or click to choose</p>
                 <span class="upload-hint">PNG, JPG up to 5MB</span>
               </div>
-              <img id="photoPreviewImg" class="photo-preview-img" alt="Profile photo preview" style="display:none" />
-              <button class="remove-photo-btn" id="removePhotoBtn" type="button" style="display:none" aria-label="Remove photo">✕</button>
-              <input type="file" id="photoInput" accept="image/*" style="display:none" />
+              <img id="photoPreviewImg" class="photo-preview-img hidden" alt="Profile photo preview" />
+              <button class="remove-photo-btn hidden" id="removePhotoBtn" type="button" aria-label="Remove photo">✕</button>
+              <input type="file" id="photoInput" accept="image/*" class="hidden" aria-label="Upload profile photo" title="Upload profile photo" />
             </div>
           </div>
           <div class="field">
@@ -244,7 +244,7 @@
           <div class="field">
             <label for="github">GitHub</label>
             <input type="url" id="github" class="form-input" placeholder="https://github.com/you">
-            <div id="githubStatsPreview" style="display:none; margin-top:8px"></div>
+            <div id="githubStatsPreview" class="hidden github-stats-preview"></div>
           </div>
           <div class="field">
             <label for="linkedin">LinkedIn</label>
@@ -294,11 +294,47 @@
           <div class="field">
             <label for="fontSelect">Font Family</label>
             <select id="fontSelect" class="form-input">
-              <option value="Inter" selected>Inter</option>
-              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
-              <option value="DM Sans">DM Sans</option>
-              <option value="Poppins">Poppins</option>
+              <optgroup label="Modern Sans-Serif">
+                <option value="Inter" selected>Inter</option>
+                <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                <option value="Outfit">Outfit</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Lexend">Lexend</option>
+                <option value="Montserrat">Montserrat</option>
+              </optgroup>
+              <optgroup label="Elegant Serif">
+                <option value="Playfair Display">Playfair Display</option>
+                <option value="Lora">Lora</option>
+              </optgroup>
+              <optgroup label="Creative & Bold">
+                <option value="Syne">Syne</option>
+              </optgroup>
+              <optgroup label="Tech Mono">
+                <option value="JetBrains Mono">JetBrains Mono</option>
+              </optgroup>
             </select>
+          </div>
+
+          <!-- Advanced Typography -->
+          <div class="typography-controls">
+            <div class="typo-grid">
+              <div class="field">
+                <label for="fontSize">Font Size <span id="valFontSize">16</span>px</label>
+                <input type="range" id="fontSize" min="12" max="24" value="16" class="form-range">
+              </div>
+              <div class="field">
+                <label for="fontWeight">Weight <span id="valFontWeight">400</span></label>
+                <input type="range" id="fontWeight" min="300" max="800" step="100" value="400" class="form-range">
+              </div>
+              <div class="field">
+                <label for="lineHeight">Line Height <span id="valLineHeight">1.6</span></label>
+                <input type="range" id="lineHeight" min="1" max="2.5" step="0.1" value="1.6" class="form-range">
+              </div>
+              <div class="field">
+                <label for="letterSpacing">Spacing <span id="valLetterSpacing">0</span>px</label>
+                <input type="range" id="letterSpacing" min="-2" max="10" step="0.5" value="0" class="form-range">
+              </div>
+            </div>
           </div>
           <!-- Language Toggle -->
           <div class="lang-toggle">
@@ -312,7 +348,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div style="padding:0;">
+      <div class="actions-container">
         <button class="btn-generate" id="generateBtn" type="button">✨ Generate Portfolio</button>
         <div class="actions-row">
           <button class="btn-secondary hidden" id="downloadBtn" type="button">⬇ Download HTML</button>
@@ -321,7 +357,7 @@
         </div>
 
         <!-- Export Panel -->
-        <div class="export-panel" style="margin-top:12px">
+        <div class="export-panel">
           <div class="export-title">📤 تصدير</div>
           <div class="export-buttons">
             <button class="export-btn" onclick="exportHTML()" type="button"><span class="export-icon">🌐</span><span class="export-label">HTML</span><span class="export-sub">للنشر</span></button>
@@ -332,22 +368,22 @@
               <span class="export-label">Import</span>
               <span class="export-sub">من JSON</span>
             </button>
-            <input type="file" id="jsonImportInput" accept=".json" style="display:none" onchange="handleJSONImport(event)" />
+            <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="handleJSONImport(event)" aria-label="Import portfolio JSON" />
             <button class="export-btn" onclick="exportTXT()" type="button"><span class="export-icon">📝</span><span class="export-label">TXT</span><span class="export-sub">للـ ATS</span></button>
           </div>
         </div>
 
         <!-- Share Box -->
-        <div id="shareBox" class="share-box" style="display:none">
+        <div id="shareBox" class="share-box hidden">
           <span class="share-label">🔗 Portfolio Link</span>
           <div class="share-input-row">
-            <input id="shareUrl" type="text" readonly class="share-url-input" />
+            <input id="shareUrl" type="text" readonly class="share-url-input" aria-label="Shareable portfolio URL" />
             <button type="button" class="btn-copy" id="copyShareBtn">Copy</button>
           </div>
           <p class="share-note">Anyone with this link can view your portfolio directly</p>
           
           <!-- QR Code Section -->
-          <div class="qr-section" id="qrSection" style="display:none">
+          <div class="qr-section hidden" id="qrSection">
             <div class="qr-label">📱 QR Code للمشاركة السريعة</div>
             <div class="qr-container">
               <img id="qrCodeImg" class="qr-image" alt="QR Code" />
@@ -377,29 +413,29 @@
 
         <!-- ATS Score Analyzer -->
         <button class="btn-ats" onclick="analyzeATS()" id="atsBtn" type="button">🤖 تحليل ATS Score</button>
-        <div id="atsPanel" style="display:none"></div>
+        <div id="atsPanel" class="hidden"></div>
 
         <!-- JD Matcher -->
         <div class="jd-matcher-panel">
           <div class="jd-header" onclick="toggleJDMatcher()">
             <span>🎯 Job Description Matcher</span>
-            <span class="jd-badge" id="jdMatchBadge" style="display:none">0%</span>
+            <span class="jd-badge hidden" id="jdMatchBadge">0%</span>
             <span class="jd-arrow">▼</span>
           </div>
-          <div id="jdMatcherBody" class="jd-body" style="display:none">
+          <div id="jdMatcherBody" class="jd-body hidden">
             <textarea id="jobDescInput" class="jd-textarea" placeholder="الصق هنا الـ Job Description من LinkedIn أو أي موقع..."></textarea>
             <div class="jd-actions-group">
               <button class="btn-match" onclick="matchJobDescription()" type="button">🎯 تحليل التطابق</button>
               <button class="btn-coverletter" onclick="generateCoverLetter()" id="coverLetterBtn" type="button">💌 اكتب Cover Letter</button>
             </div>
-            <div id="jdResults" style="display:none"></div>
-            <div id="coverLetterPanel" style="display:none"></div>
+            <div id="jdResults" class="hidden"></div>
+            <div id="coverLetterPanel" class="hidden"></div>
           </div>
         </div>
 
         <!-- Interview Prep -->
         <button class="btn-interview" onclick="generateInterviewPrep()" id="interviewBtn" type="button">🎤 جهزني للـ Interview</button>
-        <div id="interviewPanel" style="display:none"></div>
+        <div id="interviewPanel" class="hidden"></div>
 
         <!-- Version History -->
         <div class="version-panel" id="versionPanel">
@@ -418,7 +454,7 @@
     <div class="preview-column" id="previewColumn">
       <div class="preview-label"><span class="dot"></span> Live Preview</div>
       <div class="preview-frame-wrapper">
-        <iframe id="previewFrame" title="Portfolio Preview" sandbox="allow-same-origin"></iframe>
+        <iframe id="previewFrame" title="Portfolio Preview" sandbox="allow-same-origin allow-scripts"></iframe>
       </div>
     </div>
   </main>
@@ -451,6 +487,8 @@
   <script src="templates/magazine.js"></script>
   <script src="templates/cv-classic.js"></script>
   <script src="templates/cv-modern.js"></script>
+  <script src="templates/cv-ats.js"></script>
+  <script src="templates/cv-executive.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

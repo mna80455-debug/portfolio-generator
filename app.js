@@ -92,8 +92,10 @@ function slugify(name) {
   ];
 
   const cvTemplates = [
-    { id: 'cv-classic',  name: 'Classic',   badge: '🏢 Corporate' },
-    { id: 'cv-modern',   name: 'Modern',    badge: '✨ Clean' },
+    { id: 'cv-classic',    name: 'Classic',      badge: '🏢 Corporate' },
+    { id: 'cv-modern',     name: 'Modern',       badge: '✨ Clean' },
+    { id: 'cv-ats',        name: 'ATS Master',   badge: '🤖 Global' },
+    { id: 'cv-executive',  name: 'Executive',    badge: '💎 Elite' },
   ];
 
   // ─── DOM Refs ───
@@ -124,6 +126,10 @@ function slugify(name) {
   const primaryColor  = $('primaryColor');
   const colorHex      = $('colorHex');
   const fontSelect    = $('fontSelect');
+  const fontSize      = $('fontSize');
+  const fontWeight    = $('fontWeight');
+  const lineHeight    = $('lineHeight');
+  const letterSpacing = $('letterSpacing');
   const generateBtn   = $('generateBtn');
   const downloadBtn   = $('downloadBtn');
   const downloadPdfBtn = $('downloadPdfBtn');
@@ -143,16 +149,23 @@ function slugify(name) {
     };
   }
   const debouncedUpdatePreview = debounce(function() {
-    var html = generateCurrentTemplate();
-    previewFrame.srcdoc = html;
-    previewFrame.onload = function() {
+    try {
+      var html = generateCurrentTemplate();
+      if (!html) throw new Error('Generated HTML is empty');
+      previewFrame.srcdoc = html;
+      
+      // Force opacity back if onload takes too long or fails
+      const resetOpacity = () => {
+        previewFrame.style.opacity = '1';
+        previewFrame.style.transform = 'scale(1)';
+      };
+      
+      previewFrame.onload = resetOpacity;
+      setTimeout(resetOpacity, 1000); 
+    } catch (err) {
+      console.error('Preview error:', err);
       previewFrame.style.opacity = '1';
-      previewFrame.style.transform = 'scale(1)';
-    };
-    setTimeout(function() {
-      previewFrame.style.opacity = '1';
-      previewFrame.style.transform = 'scale(1)';
-    }, 800);
+    }
   }, 300);
 
   // ═══════════════════════════════════════════
@@ -275,7 +288,12 @@ function slugify(name) {
       template:    state.template,
       outputType:  outputType,
       accentColor: primaryColor.value,
-      font:        fontSelect.value
+      font:        fontSelect.value,
+      fontSize:    fontSize.value,
+      fontWeight:  fontWeight.value,
+      lineHeight:  lineHeight.value,
+      letterSpacing: letterSpacing.value,
+      language:    cvLanguage
     };
   }
 
@@ -290,8 +308,10 @@ function slugify(name) {
       case 'aurora':     return generateAuroraHTML(data, pc, font);
       case 'terminal':   return generateTerminalHTML(data, pc, font);
       case 'magazine':   return generateMagazineHTML(data, pc, font);
-      case 'cv-classic': return generateCVClassicHTML(data, pc, font);
-      case 'cv-modern':  return generateCVModernHTML(data, pc, font);
+      case 'cv-classic':   return generateCVClassicHTML(data, pc, font);
+      case 'cv-modern':    return generateCVModernHTML(data, pc, font);
+      case 'cv-ats':       return generateCVATSHTML(data, pc, font);
+      case 'cv-executive': return generateCVExecutiveHTML(data, pc, font);
       default:           return generateMidnightHTML(data, pc, font);
     }
   }
@@ -318,6 +338,16 @@ function slugify(name) {
   primaryColor.addEventListener('input', function() {
     colorHex.textContent = primaryColor.value.toUpperCase();
   });
+
+  // Typography sliders update labels and preview
+  [fontSize, fontWeight, lineHeight, letterSpacing].forEach(input => {
+    input.addEventListener('input', function() {
+      const valSpan = $('val' + input.id.charAt(0).toUpperCase() + input.id.slice(1));
+      if (valSpan) valSpan.textContent = input.value;
+      updatePreview();
+    });
+  });
+  fontSelect.addEventListener('change', updatePreview);
 
   // ═══════════════════════════════════════════
   //  Output Type Selector + Dynamic Template Grid
