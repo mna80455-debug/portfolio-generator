@@ -725,6 +725,17 @@ function slugify(name) {
         + '<span class="tip-arrow">→</span>'
         + '</div>';
     }).join('');
+
+    // Update FAB score
+    var fab = $('fabScore');
+    if (fab) {
+      fab.textContent = score + '%';
+      fab.style.background = score > 70 ? 'var(--success)' : score > 40 ? 'var(--warning)' : 'var(--danger)';
+    }
+
+    // Update progress bar
+    if (progressFill) progressFill.style.width = score + '%';
+    if (progressText) progressText.textContent = score + '%';
   }
 
   // Focus field from tip click
@@ -1430,41 +1441,505 @@ function slugify(name) {
   };
 
   // ═══════════════════════════════════════════
-  //  FEATURE: Interview Prep
+  //  FEATURE: Interview Prep (Free + AI)
   // ═══════════════════════════════════════════
   window.generateInterviewPrep = async function() {
     var data = collectData();
     var btn = document.getElementById('interviewBtn');
-    if (!hasClaudeKey()) { showToast('أضيفي Claude API Key 🔑', 'error'); return; }
-    if (!data.name || !data.skills.length) { showToast('أكملي بياناتك الأول ✍️', 'error'); return; }
-    setButtonLoading(btn, true, '⏳ جاري التجهيز...');
-    var prompt = 'Expert interview coach. Generate interview prep for:\nTitle: '+data.jobTitle+'\nSkills: '+data.skills.join(', ')+'\nBio: '+data.bio+'\nProjects: '+data.projects.filter(function(p){return p.name;}).map(function(p){return p.name+': '+p.description;}).join(' | ')
-      + '\n\nReturn ONLY valid JSON: {"questions":[{"q":"<Arabic>","type":"technical|behavioral|situational","ideal_answer":"<Arabic 3-4 sentences>","tip":"<Arabic>"}],"elevator_pitch":"<Arabic 30-sec pitch>","weakness_answer":"<Arabic>","salary_tip":"<Arabic>"}. Generate 5 questions: 2 technical, 2 behavioral, 1 situational.';
-    try {
-      var raw = await callClaude(prompt, 1000);
-      var result = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      renderInterviewPrep(result);
-      showToast('جاهزة للـ Interview! 🎤');
-    } catch(e) {
-      showToast('خطأ — جربي تاني', 'error');
-    } finally {
-      setButtonLoading(btn, false, '🎤 جهزني للـ Interview');
+    if (!data.name || !data.skills.length) { showToast('أكمل بياناتك الأول ✍️', 'error'); return; }
+
+    // If Claude key exists, use AI
+    if (hasClaudeKey()) {
+      setButtonLoading(btn, true, '⏳ جاري التجهيز...');
+      var prompt = 'Expert interview coach. Generate interview prep for:\nTitle: '+data.jobTitle+'\nSkills: '+data.skills.join(', ')+'\nBio: '+data.bio+'\nProjects: '+data.projects.filter(function(p){return p.name;}).map(function(p){return p.name+': '+p.description;}).join(' | ')
+        + '\n\nReturn ONLY valid JSON: {"questions":[{"q":"<Arabic>","type":"technical|behavioral|situational","ideal_answer":"<Arabic 3-4 sentences>","tip":"<Arabic>"}],"elevator_pitch":"<Arabic 30-sec pitch>","weakness_answer":"<Arabic>","salary_tip":"<Arabic>"}. Generate 5 questions: 2 technical, 2 behavioral, 1 situational.';
+      try {
+        var raw = await callClaude(prompt, 1000);
+        var result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+        renderInterviewPrep(result);
+        showToast('جاهز للـ Interview! 🎤');
+      } catch(e) {
+        showToast('خطأ — جرب تاني', 'error');
+      } finally {
+        setButtonLoading(btn, false, '🎤 جهزني للـ Interview');
+      }
+      return;
     }
+
+    // FREE fallback — local question bank
+    var title = data.jobTitle || 'Software Developer';
+    var sk = data.skills.slice(0, 3).join(' و ');
+    var questions = [
+      {q: 'احكيلي عن نفسك وخبرتك في مجال ' + title, type: 'behavioral', ideal_answer: 'ابدأ بمقدمة قصيرة عن خلفيتك الأكاديمية، ثم اذكر خبرتك العملية الأساسية مع التركيز على المهارات المطلوبة في الوظيفة. اختم بما يميزك عن غيرك.', tip: 'اجعل إجابتك 60-90 ثانية فقط'},
+      {q: 'إيه خبرتك في ' + sk + '؟', type: 'technical', ideal_answer: 'اذكر مشاريع محددة استخدمت فيها هذه المهارات. استخدم طريقة STAR (الموقف، المهمة، الإجراء، النتيجة) لتوضيح تأثيرك.', tip: 'استخدم أرقام ونتائج ملموسة'},
+      {q: 'إيه أكبر تحدي واجهته في شغلك وإزاي حليته؟', type: 'situational', ideal_answer: 'اختار تحدي حقيقي واشرح السياق والخطوات اللي اتخذتها والنتيجة النهائية. ركز على مهاراتك في حل المشكلات والعمل الجماعي.', tip: 'اختار مثال يبرز مهاراتك القيادية'},
+      {q: 'ليه عايز تشتغل معانا؟', type: 'behavioral', ideal_answer: 'ابحث عن الشركة مسبقاً واذكر حاجات محددة تعجبك (المنتج، الثقافة، التكنولوجيا). اربط أهدافك المهنية برؤية الشركة.', tip: 'لازم تكون عارف عن الشركة كويس'},
+      {q: 'إزاي بتتعامل مع الضغط والـ deadlines الضيقة؟', type: 'situational', ideal_answer: 'اذكر استراتيجياتك في إدارة الوقت وتحديد الأولويات. أعطِ مثال محدد عن موقف ضغط ونجحت فيه.', tip: 'أظهر إنك بتفكر بشكل منظم'}
+    ];
+    var result = {
+      questions: questions,
+      elevator_pitch: 'أنا ' + (data.name||'محترف') + '، ' + title + ' عندي خبرة في ' + sk + '. بركز على تقديم حلول عملية وعالية الجودة وبساعد الفرق تشتغل أسرع وأذكى.',
+      weakness_answer: 'نقطة ضعفي هي إني أحياناً بقضي وقت أكتر من اللازم في تحسين التفاصيل الدقيقة. بتعامل مع ده بإني بحدد time-box لكل مهمة وبركز على الأولويات.',
+      salary_tip: 'ابحث عن متوسط الرواتب في مجالك ومنطقتك. قدم نطاق (مثلاً 8,000-12,000) مش رقم ثابت. لو سألوك الأول قول "حابب أعرف أكتر عن المسؤوليات قبل ما نتكلم عن الأرقام".'
+    };
+    renderInterviewPrep(result);
+    showToast('جاهز للـ Interview! 🎤 (نسخة مجانية)');
   };
 
   function renderInterviewPrep(r) {
     var panel = document.getElementById('interviewPanel');
     var tl = {technical:'⚙️ تقني', behavioral:'🧠 سلوكي', situational:'🎯 موقفي'};
-    panel.style.display = 'block';
+    panel.classList.remove('hidden');
     panel.innerHTML = '<div class="interview-section"><div class="interview-title">🗣️ الـ Elevator Pitch</div><div class="elevator-pitch">"'+r.elevator_pitch+'"</div></div>'
       + '<div class="interview-section"><div class="interview-title">❓ أسئلة محتملة</div>'
-      + r.questions.map(function(q,i){return '<div class="question-card"><div class="question-header"><span class="q-num">س'+(i+1)+'</span><span class="q-type">'+(tl[q.type]||q.type)+'</span></div><p class="question-text">'+q.q+'</p><details class="answer-details"><summary>اعرضي الإجابة المثالية</summary><div class="ideal-answer">'+q.ideal_answer+'</div><div class="q-tip">💡 '+q.tip+'</div></details></div>';}).join('')
+      + r.questions.map(function(q,i){return '<div class="question-card"><div class="question-header"><span class="q-num">س'+(i+1)+'</span><span class="q-type">'+(tl[q.type]||q.type)+'</span></div><p class="question-text">'+q.q+'</p><details class="answer-details"><summary>اعرض الإجابة المثالية</summary><div class="ideal-answer">'+q.ideal_answer+'</div><div class="q-tip">💡 '+q.tip+'</div></details></div>';}).join('')
       + '</div>'
       + '<div class="interview-section two-col"><div class="interview-card"><div class="interview-title">😅 سؤال الـ Weakness</div><p class="interview-text">'+r.weakness_answer+'</p></div>'
       + '<div class="interview-card"><div class="interview-title">💰 نصيحة الراتب</div><p class="interview-text">'+r.salary_tip+'</p></div></div>';
   }
 
+  // ═══════════════════════════════════════════
+  //  FEATURE: ATS Score Analyzer (Free — Local)
+  // ═══════════════════════════════════════════
+  window.analyzeATS = function() {
+    var data = collectData();
+    var score = 0; var tips = []; var max = 100;
+
+    // Name (10 pts)
+    if (data.name && data.name.length > 2) { score += 10; } else { tips.push({icon:'👤', text:'أضف اسمك الكامل', pts:10}); }
+    // Email (10 pts)
+    if (data.email && data.email.includes('@')) { score += 10; } else { tips.push({icon:'📧', text:'أضف بريدك الإلكتروني', pts:10}); }
+    // Phone (5 pts)
+    if (data.phone && data.phone.length > 5) { score += 5; } else { tips.push({icon:'📱', text:'أضف رقم الهاتف', pts:5}); }
+    // Location (5 pts)
+    if (data.location) { score += 5; } else { tips.push({icon:'📍', text:'أضف الموقع', pts:5}); }
+    // Job Title (10 pts)
+    if (data.jobTitle && data.jobTitle.length > 2) { score += 10; } else { tips.push({icon:'💼', text:'أضف المسمى الوظيفي', pts:10}); }
+    // Bio (15 pts)
+    if (data.bio && data.bio.length > 50) { score += 15; }
+    else if (data.bio && data.bio.length > 10) { score += 8; tips.push({icon:'📝', text:'اكتب بايو أطول (50+ حرف)', pts:7}); }
+    else { tips.push({icon:'📝', text:'اكتب نبذة شخصية', pts:15}); }
+    // Skills (15 pts)
+    var skillCount = (data.skills||[]).length;
+    if (skillCount >= 5) { score += 15; }
+    else if (skillCount >= 3) { score += 10; tips.push({icon:'🛠', text:'أضف مهارات أكتر (5+)', pts:5}); }
+    else if (skillCount > 0) { score += 5; tips.push({icon:'🛠', text:'أضف مهارات (3+ على الأقل)', pts:10}); }
+    else { tips.push({icon:'🛠', text:'أضف مهارات وظيفية', pts:15}); }
+    // Education (10 pts)
+    var hasEdu = (data.education||[]).some(function(e){return e.school;});
+    if (hasEdu) { score += 10; } else { tips.push({icon:'🎓', text:'أضف التعليم', pts:10}); }
+    // Experience (10 pts)
+    var hasExp = (data.experience||[]).some(function(e){return e.company;});
+    if (hasExp) { score += 10; } else { tips.push({icon:'🏢', text:'أضف الخبرة العملية', pts:10}); }
+    // Projects (10 pts)
+    var hasProj = (data.projects||[]).some(function(p){return p.name;});
+    if (hasProj) { score += 10; } else { tips.push({icon:'🚀', text:'أضف مشاريع', pts:10}); }
+
+    // Render
+    var color = score >= 80 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
+    var label = score >= 80 ? 'ممتاز 🏆' : score >= 60 ? 'جيد 👍' : score >= 40 ? 'مقبول ⚠️' : 'ضعيف ❌';
+    var panel = document.getElementById('atsPanel');
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="ats-result">'
+      + '<div class="ats-header"><div class="ats-score-circle" style="border-color:'+color+'"><span class="ats-score-num" style="color:'+color+'">'+score+'</span><span class="ats-score-label">/100</span></div>'
+      + '<div class="ats-info"><h3 class="ats-grade" style="color:'+color+'">'+label+'</h3><p class="ats-desc">تحليل مبني على معايير أنظمة التتبع ATS</p></div></div>'
+      + (tips.length ? '<div class="ats-tips-title">💡 نصائح لتحسين الـ Score:</div><div class="ats-tips-list">'
+        + tips.sort(function(a,b){return b.pts-a.pts;}).map(function(t){return '<div class="ats-tip-item"><span class="ats-tip-icon">'+t.icon+'</span><span class="ats-tip-text">'+t.text+'</span><span class="ats-tip-pts">+'+t.pts+' نقطة</span></div>';}).join('')
+        + '</div>' : '<p class="ats-perfect">🎉 بورتفوليو ممتاز! كل الأقسام مكتملة.</p>')
+      + '</div>';
+    showToast('تم تحليل الـ ATS Score: ' + score + '/100');
+  };
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: JD Matcher (Free — Local)
+  // ═══════════════════════════════════════════
+  window.toggleJDMatcher = function() {
+    var body = document.getElementById('jdMatcherBody');
+    var arrow = document.querySelector('.jd-arrow');
+    body.classList.toggle('hidden');
+    if (arrow) arrow.textContent = body.classList.contains('hidden') ? '▼' : '▲';
+  };
+
+  window.matchJobDescription = function() {
+    var jdText = (document.getElementById('jobDescInput').value || '').toLowerCase();
+    if (!jdText || jdText.length < 20) { showToast('الصق الـ Job Description الأول ✏️', 'error'); return; }
+
+    var data = collectData();
+    // Extract meaningful words from JD
+    var stopWords = ['the','a','an','is','are','was','were','be','been','being','have','has','had','do','does','did','will','shall','would','should','can','could','may','might','must','and','but','or','if','in','on','at','to','for','of','with','by','from','as','into','about','between','through','during','before','after','above','below','under','over','up','down','out','off','then','than','that','this','these','those','it','its','we','our','you','your','they','their','he','she','his','her','i','my','me','no','not','don','t','s','re','ll','ve','d','m','all','each','every','both','few','more','most','other','some','such','only','own','same','so','very','just','because','also','like','well','even','made','after','going','looking','experience','work','working','ability','responsible','responsibilities','requirements','required','required','including','role','team','strong','key','new','good','make','using','used','years','year','join','etc','ideal','candidate','position','job','company','apply'];
+    var jdWords = jdText.replace(/[^a-zA-Z\u0600-\u06FF\s]/g, '').split(/\s+/).filter(function(w) {
+      return w.length > 2 && !stopWords.includes(w);
+    });
+
+    // Get unique keywords
+    var kwMap = {};
+    jdWords.forEach(function(w) { kwMap[w] = (kwMap[w]||0) + 1; });
+    var keywords = Object.keys(kwMap).sort(function(a,b){return kwMap[b]-kwMap[a];}).slice(0, 30);
+
+    // Compare with user data
+    var userText = [data.name, data.jobTitle, data.bio, data.skills.join(' '),
+      data.experience.map(function(e){return e.role+' '+e.company+' '+e.description;}).join(' '),
+      data.projects.map(function(p){return p.name+' '+p.description;}).join(' ')
+    ].join(' ').toLowerCase();
+
+    var matched = []; var missing = [];
+    keywords.forEach(function(kw) {
+      if (userText.includes(kw)) matched.push(kw);
+      else missing.push(kw);
+    });
+
+    var pct = keywords.length ? Math.round((matched.length / keywords.length) * 100) : 0;
+    var color = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)';
+
+    // Show badge
+    var badge = document.getElementById('jdMatchBadge');
+    if (badge) { badge.textContent = pct + '%'; badge.classList.remove('hidden'); badge.style.background = color; }
+
+    // Render results
+    var panel = document.getElementById('jdResults');
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="jd-result">'
+      + '<div class="jd-score" style="color:'+color+'">'+pct+'% تطابق</div>'
+      + '<div class="jd-matched-section"><h4>✅ كلمات موجودة عندك ('+matched.length+')</h4><div class="jd-tags">' + matched.map(function(k){return '<span class="jd-tag matched">'+k+'</span>';}).join('') + '</div></div>'
+      + (missing.length ? '<div class="jd-missing-section"><h4>❌ كلمات ناقصة ('+missing.length+')</h4><div class="jd-tags">' + missing.map(function(k){return '<span class="jd-tag missing">'+k+'</span>';}).join('') + '</div><p class="jd-advice">💡 حاول تضيف الكلمات دي في المهارات أو البايو أو وصف الخبرة</p></div>' : '')
+      + '</div>';
+    showToast('تطابق الـ JD: ' + pct + '%');
+  };
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: Cover Letter (Free + AI)
+  // ═══════════════════════════════════════════
+  window.generateCoverLetter = async function() {
+    var data = collectData();
+    var jdText = (document.getElementById('jobDescInput').value || '').trim();
+    var btn = document.getElementById('coverLetterBtn');
+
+    if (!data.name) { showToast('أكمل بياناتك الأول ✍️', 'error'); return; }
+
+    if (hasClaudeKey() && jdText.length > 20) {
+      setButtonLoading(btn, true, '⏳ جاري الكتابة...');
+      try {
+        var prompt = 'Write a professional cover letter in Arabic for:\nName: '+data.name+'\nTitle: '+data.jobTitle+'\nSkills: '+data.skills.join(', ')+'\nBio: '+data.bio+'\nJob Description: '+jdText.substring(0,800)+'\n\nWrite 3-4 paragraphs. Professional tone. Return plain text only.';
+        var letter = await callClaude(prompt, 800);
+        renderCoverLetter(letter);
+        showToast('تم كتابة الـ Cover Letter! 💌');
+      } catch(e) {
+        generateFreeCoverLetter(data, jdText);
+      } finally {
+        setButtonLoading(btn, false, '💌 اكتب Cover Letter');
+      }
+    } else {
+      generateFreeCoverLetter(data, jdText);
+    }
+  };
+
+  function generateFreeCoverLetter(data, jd) {
+    var name = data.name || 'المتقدم';
+    var title = data.jobTitle || 'الوظيفة';
+    var skills = data.skills.slice(0,5).join('، ') || 'مهارات متنوعة';
+    var letter = 'السلام عليكم ورحمة الله وبركاته،\n\n'
+      + 'أكتب إليكم للتعبير عن اهتمامي بوظيفة ' + title + '. أنا ' + name + '، ولدي خبرة في ' + skills + '.\n\n'
+      + (data.bio ? data.bio.substring(0,200) + '\n\n' : '')
+      + 'أعتقد أن مهاراتي وخبرتي تجعلني مرشحاً مناسباً لهذه الوظيفة. أتطلع لفرصة مناقشة كيف يمكنني المساهمة في نجاح فريقكم.\n\n'
+      + 'مع خالص التقدير،\n' + name;
+    renderCoverLetter(letter);
+    showToast('تم إنشاء Cover Letter مجاني 💌');
+  }
+
+  function renderCoverLetter(text) {
+    var panel = document.getElementById('coverLetterPanel');
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="cover-letter-result">'
+      + '<div class="cl-header"><span>💌 Cover Letter</span><button class="btn-copy-cl" onclick="navigator.clipboard.writeText(document.querySelector(\'.cl-text\').textContent);showToast(\'تم نسخ الـ Cover Letter! 📋\')">📋 نسخ</button></div>'
+      + '<div class="cl-text" style="white-space:pre-wrap;direction:rtl;text-align:right;padding:16px;background:var(--bg-secondary);border-radius:8px;font-size:0.9rem;line-height:1.8;color:var(--text-primary);border:1px solid var(--border)">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      + '</div>';
+  }
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: AI Content Editor
+  // ═══════════════════════════════════════════
+  window.aiEditContent = async function() {
+    var promptInput = document.getElementById('aiPromptInput');
+    var instruction = (promptInput ? promptInput.value : '').trim();
+    var btn = document.getElementById('aiEditBtn');
+    var resultPanel = document.getElementById('aiResultPanel');
+
+    if (!instruction) { showToast('اكتب التعديل اللي عايزه أولاً ✏️', 'error'); return; }
+
+    var data = collectData();
+
+    if (hasClaudeKey()) {
+      setButtonLoading(btn, true, '⏳ جاري التعديل...');
+      try {
+        var prompt = 'You are a portfolio optimizer. Current portfolio data:\n'
+          + 'Name: ' + data.name + '\nTitle: ' + data.jobTitle + '\nBio: ' + data.bio + '\nSkills: ' + data.skills.join(', ')
+          + '\n\nUser instruction: "' + instruction + '"'
+          + '\n\nReturn ONLY valid JSON with the fields to update: {"bio":"...", "jobTitle":"...", "skills":["..."]}. Only include fields that need changing. Write in the same language the user used.';
+        var raw = await callClaude(prompt, 600);
+        var changes = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+        // Apply changes
+        var applied = [];
+        if (changes.bio !== undefined) {
+          document.getElementById('bio').value = changes.bio;
+          applied.push('✅ تم تعديل البايو');
+        }
+        if (changes.jobTitle !== undefined) {
+          document.getElementById('jobTitle').value = changes.jobTitle;
+          applied.push('✅ تم تعديل المسمى الوظيفي');
+        }
+        if (changes.skills && Array.isArray(changes.skills)) {
+          state.skills = changes.skills;
+          renderSkills();
+          applied.push('✅ تم تعديل المهارات');
+        }
+
+        resultPanel.classList.remove('hidden');
+        resultPanel.innerHTML = '<div class="ai-result-card success"><div class="ai-result-title">🎉 تم التعديل بنجاح!</div>' + applied.map(function(a){return '<div class="ai-change">'+a+'</div>';}).join('') + '</div>';
+        updatePreview();
+        showToast('تم تطبيق التعديلات! ✨');
+      } catch(e) {
+        showFreeAITips(instruction, resultPanel);
+      } finally {
+        setButtonLoading(btn, false, '✨ نفّذ التعديل');
+      }
+    } else {
+      showFreeAITips(instruction, resultPanel);
+    }
+  };
+
+  function showFreeAITips(instruction, panel) {
+    var tips = [
+      '📝 <strong>نصيحة للبايو:</strong> اكتب 2-3 جمل تذكر فيها خبرتك الأساسية والقيمة اللي بتقدمها',
+      '🎯 <strong>للمسمى الوظيفي:</strong> استخدم مسمى واضح ومحدد (مثل "Frontend Developer" بدل "Developer")',
+      '🛠 <strong>للمهارات:</strong> اذكر 5-8 مهارات محددة ومطلوبة في سوق العمل',
+      '💡 <strong>للتحسين:</strong> أضف أرقام ونتائج ملموسة (مثل "حسنت الأداء بنسبة 40%")',
+      '🔑 <strong>لاستخدام الـ AI:</strong> أضف Claude API Key في أول الكود لتفعيل التعديل التلقائي'
+    ];
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="ai-result-card info"><div class="ai-result-title">💡 نصائح لتحسين بورتفوليوك</div><p class="ai-note">طلبت: "'+instruction.replace(/</g,'&lt;')+'"</p><div class="ai-tips-list">' + tips.map(function(t){return '<div class="ai-tip">'+t+'</div>';}).join('') + '</div></div>';
+    showToast('اطلع على النصائح المجانية 💡');
+  }
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: Onboarding
+  // ═══════════════════════════════════════════
+  function initOnboarding() {
+    var seen = localStorage.getItem('ob_seen');
+    if (seen) return;
+    var screen = $('onboardingScreen');
+    var mainApp = $('mainApp');
+    if (screen) screen.style.display = 'flex';
+    if (mainApp) mainApp.style.display = 'none';
+    var fab = $('fabContainer');
+    if (fab) fab.style.display = 'none';
+  }
+
+  window.startOnboarding = function(type) {
+    setOutputType(type);
+    var screen = $('onboardingScreen');
+    screen.style.opacity = '0';
+    screen.style.transform = 'scale(1.03)';
+    setTimeout(function() {
+      screen.style.display = 'none';
+      var mainApp = $('mainApp');
+      if (mainApp) mainApp.style.display = '';
+      var fab = $('fabContainer');
+      if (fab) fab.style.display = 'flex';
+      localStorage.setItem('ob_seen', '1');
+      var msg = type === 'portfolio'
+        ? '🌐 هنعمل Portfolio شخصي — ابدأ بكتابة اسمك!'
+        : '📄 هنعمل CV احترافي — ابدأ بكتابة اسمك!';
+      setTimeout(function() { showToast(msg, 'success'); }, 600);
+      setTimeout(function() { if (fullName) fullName.focus(); }, 800);
+    }, 350);
+  };
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: Progress Steps Wizard
+  // ═══════════════════════════════════════════
+  var STEPS = [
+    { id:1, icon:'👤', title:'بياناتك', desc:'الاسم والمعلومات الأساسية', sections:['sectionPersonal'] },
+    { id:2, icon:'🛠️', title:'مهاراتك', desc:'المهارات والخبرات', sections:['sectionSkills','sectionExperience','sectionEducation'] },
+    { id:3, icon:'🚀', title:'مشاريعك', desc:'المشاريع والإنجازات', sections:['sectionProjects','sectionAchievements','sectionLanguages'] },
+    { id:4, icon:'🎨', title:'الشكل', desc:'القالب والألوان', sections:['sectionCustomize','sectionSocial'] }
+  ];
+  var currentStep = 1;
+
+  function renderProgressWizard() {
+    var track = document.querySelector('.steps-track');
+    if (!track) return;
+    track.innerHTML = STEPS.map(function(step) {
+      var cls = (step.id === currentStep ? 'active' : '') + (step.id < currentStep ? ' done' : '');
+      var dot = step.id < currentStep ? '✓' : step.icon;
+      var line = step.id < STEPS.length ? '<div class="step-line' + (step.id < currentStep ? ' done' : '') + '"></div>' : '';
+      return '<div class="step-indicator ' + cls + '" onclick="goToStep(' + step.id + ')"><div class="step-dot">' + dot + '</div><span class="step-label">' + step.title + '</span></div>' + line;
+    }).join('');
+
+    var current = STEPS[currentStep - 1];
+    var stepTitle = $('stepTitle');
+    var stepDesc = $('stepDesc');
+    var stepCounter = $('stepCounter');
+    if (stepTitle) stepTitle.textContent = current.icon + ' ' + current.title;
+    if (stepDesc) stepDesc.textContent = current.desc;
+    if (stepCounter) stepCounter.textContent = currentStep + ' / ' + STEPS.length;
+
+    var prevBtn = $('prevBtn');
+    if (prevBtn) prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+
+    var nextBtn = $('nextBtn');
+    if (nextBtn) {
+      if (currentStep === STEPS.length) {
+        nextBtn.textContent = '✨ Generate';
+        nextBtn.classList.add('final');
+        nextBtn.onclick = function() { generateBtn.click(); };
+      } else {
+        nextBtn.textContent = 'التالي ←';
+        nextBtn.classList.remove('final');
+        nextBtn.onclick = goToNextStep;
+      }
+    }
+  }
+
+  function showCurrentStepSections() {
+    // Hide all form sections
+    STEPS.forEach(function(step) {
+      step.sections.forEach(function(sectionId) {
+        var el = $(sectionId);
+        if (el) { el.style.display = 'none'; el.style.animation = 'none'; }
+      });
+    });
+    // Also hide profile type on non-step-1
+    var profileSection = document.querySelector('.profile-type-selector');
+    if (profileSection) profileSection.closest('.form-section').style.display = currentStep === 1 ? 'block' : 'none';
+
+    // Show current step sections
+    var current = STEPS[currentStep - 1];
+    current.sections.forEach(function(sectionId, i) {
+      var el = $(sectionId);
+      if (el) {
+        el.style.display = 'block';
+        el.style.animation = 'fadeUp 0.4s ease ' + (i * 0.08) + 's both';
+      }
+    });
+
+    // Show/hide actions and AI tools based on step
+    var actionsContainer = document.querySelector('.actions-container');
+    if (actionsContainer) actionsContainer.style.display = currentStep === STEPS.length ? 'block' : 'none';
+  }
+
+  window.goToNextStep = function() {
+    if (currentStep < STEPS.length) {
+      currentStep++;
+      renderProgressWizard();
+      showCurrentStepSections();
+      scrollWizardToTop();
+      updateScoreUI();
+    }
+  };
+
+  window.goToPrevStep = function() {
+    if (currentStep > 1) {
+      currentStep--;
+      renderProgressWizard();
+      showCurrentStepSections();
+      scrollWizardToTop();
+    }
+  };
+
+  window.goToStep = function(step) {
+    currentStep = step;
+    renderProgressWizard();
+    showCurrentStepSections();
+    scrollWizardToTop();
+  };
+
+  function scrollWizardToTop() {
+    var wiz = $('progressWizard');
+    if (wiz) wiz.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: Smart Preview Placeholder
+  // ═══════════════════════════════════════════
+  var DEMO_DATA = {
+    name: 'Sarah Ahmed', jobTitle: 'Frontend Developer',
+    bio: 'I build beautiful, fast web experiences that users love. Passionate about clean code and creative UI.',
+    email: 'sarah@example.com', location: 'Cairo, Egypt', phone: '+20 100 123 4567',
+    skills: ['HTML', 'CSS', 'JavaScript', 'React', 'Figma'],
+    github: 'https://github.com/sarah', linkedin: 'https://linkedin.com/in/sarah',
+    twitter: '', website: '',
+    projects: [
+      { name: 'Portfolio Generator', description: 'An AI-powered tool to create portfolios in minutes', url: '#' },
+      { name: 'Todo App', description: 'A clean task manager with dark mode', url: '#' }
+    ],
+    education: [], experience: [], languages: [], achievements: [],
+    photo: null, outputType: 'portfolio'
+  };
+  var userHasStartedTyping = false;
+
+  function initSmartPreview() {
+    if (fullName && fullName.value.trim()) { userHasStartedTyping = true; return; }
+    showDemoPreview();
+    if (fullName) {
+      fullName.addEventListener('input', function() {
+        if (!userHasStartedTyping && this.value.length > 0) {
+          userHasStartedTyping = true;
+          hideDemoPreview();
+          showToast('✨ الـ Preview بيتحدث لحظة بلحظة!', 'success');
+        }
+      });
+    }
+  }
+
+  function showDemoPreview() {
+    try {
+      var html = generateMidnightHTML(DEMO_DATA, '#63B3ED', 'Inter');
+      if (html) {
+        var watermark = '<div style="position:fixed;top:12px;right:12px;background:rgba(0,0,0,0.7);color:#fff;padding:4px 10px;border-radius:99px;font-size:11px;font-family:sans-serif;pointer-events:none;z-index:9999">👀 مثال توضيحي</div>';
+        previewFrame.srcdoc = html.replace('</body>', watermark + '</body>');
+      }
+    } catch(e) { /* silent fail, demo is optional */ }
+    var banner = $('demoBanner');
+    if (banner) banner.style.display = 'flex';
+  }
+
+  window.hideDemoPreview = function() {
+    var banner = $('demoBanner');
+    if (banner) {
+      banner.style.opacity = '0';
+      setTimeout(function() { banner.style.display = 'none'; }, 300);
+    }
+    updatePreview();
+  };
+
+  // ═══════════════════════════════════════════
+  //  FEATURE: Smart Empty States
+  // ═══════════════════════════════════════════
+  var EMPTY_STATE_MESSAGES = {
+    skills: { icon:'🛠️', title:'مفيش مهارات لسه', desc:'المهارات بتزيد فرصتك في الـ ATS بنسبة 40%', action:'أضف مهارة', tip:'ابدأ بـ: HTML, CSS, JavaScript' },
+    projects: { icon:'🚀', title:'مفيش مشاريع لسه', desc:'المشاريع هي أقوى حاجة في الـ CV بتاعك', action:'أضف مشروع', tip:'حتى مشروع واحد بيفرق كتير!' },
+    experience: { icon:'💼', title:'مفيش خبرة مضافة', desc:'طالب؟ — أضف مشاريع أكاديمية أو تدريب', action:'أضف خبرة', tip:'Internship أو Part-time يحسب!' },
+    education: { icon:'🎓', title:'مفيش تعليم مضاف', desc:'الجامعة والتخصص مهمين جداً للـ HR', action:'أضف تعليمك', tip:'أضف الجامعة والكلية على الأقل' },
+    achievements: { icon:'🏆', title:'مفيش إنجازات', desc:'الإنجازات بتفرقك عن باقي المتقدمين', action:'أضف إنجاز', tip:'جايزة، مسابقة، أو شهادة — أي حاجة!' }
+  };
+
+  window.renderEmptyState = function(sectionKey, containerId, onAddClick) {
+    var msg = EMPTY_STATE_MESSAGES[sectionKey];
+    if (!msg) return;
+    var container = $(containerId);
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">'
+      + '<div class="empty-icon">' + msg.icon + '</div>'
+      + '<div class="empty-title">' + msg.title + '</div>'
+      + '<div class="empty-desc">' + msg.desc + '</div>'
+      + '<button class="empty-action-btn" onclick="' + onAddClick + '">+ ' + msg.action + '</button>'
+      + '<div class="empty-tip">💡 ' + msg.tip + '</div>'
+      + '</div>';
+  };
+
   // ─── Init ───
+  initOnboarding();
   initPhotoUpload();
   renderTemplateGrid();
   renderProjects();
@@ -1473,8 +1948,16 @@ function slugify(name) {
   renderLanguages();
   renderAchievements();
   renderVersionHistory();
-  updatePreview();
+  renderProgressWizard();
+  showCurrentStepSections();
+  initSmartPreview();
   updateScoreUI();
   checkForSharedPortfolio();
+
+  // FAB visibility on resize
+  window.addEventListener('resize', function() {
+    var fab = $('fabContainer');
+    if (fab) fab.style.display = window.innerHeight < 500 ? 'none' : 'flex';
+  });
 
 })();

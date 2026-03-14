@@ -44,6 +44,41 @@
     </div>
   </div>
 
+  <!-- =================== ONBOARDING SCREEN =================== -->
+  <div id="onboardingScreen" class="onboarding-screen" style="display:none">
+    <div class="ob-bg-decoration"></div>
+    <div class="ob-header">
+      <div class="ob-logo">⚡</div>
+      <h1 class="ob-title">Portfolio Generator</h1>
+      <p class="ob-subtitle">اصنع Portfolio أو CV احترافي في دقيقتين</p>
+    </div>
+    <div class="ob-question">إيه اللي عايز تعمله النهارده؟</div>
+    <div class="ob-cards">
+      <div class="ob-card" onclick="startOnboarding('portfolio')">
+        <div class="ob-card-icon">🌐</div>
+        <div class="ob-card-title">Portfolio شخصي</div>
+        <div class="ob-card-desc">موقع احترافي تشاركه مع أي حد</div>
+        <div class="ob-card-tags"><span>6 قوالب</span><span>رابط مشاركة</span><span>QR Code</span></div>
+        <div class="ob-card-arrow">ابدأ ←</div>
+      </div>
+      <div class="ob-card" onclick="startOnboarding('cv')">
+        <div class="ob-card-icon">📄</div>
+        <div class="ob-card-title">CV للشغل</div>
+        <div class="ob-card-desc">سيرة ذاتية مناسبة للشركات العالمية</div>
+        <div class="ob-card-tags"><span>ATS Score</span><span>Job Matcher</span><span>Cover Letter</span></div>
+        <div class="ob-card-arrow">ابدأ ←</div>
+      </div>
+    </div>
+    <div class="ob-proof">
+      <span>✅ مجاني 100%</span>
+      <span>⚡ بدون تسجيل</span>
+      <span>🔒 بياناتك على جهازك بس</span>
+    </div>
+  </div>
+
+  <!-- =================== MAIN APP =================== -->
+  <div id="mainApp">
+
   <header class="app-header">
     <div class="header-content">
       <div class="header-logo">
@@ -72,6 +107,15 @@
       <div id="sharedBanner" class="shared-banner hidden">
         <span>👀 You're viewing a shared Portfolio</span>
         <button type="button" onclick="window._clearSharedPortfolio()">Start Fresh</button>
+      </div>
+
+      <!-- Progress Wizard -->
+      <div class="progress-wizard" id="progressWizard">
+        <div class="steps-track"></div>
+        <div class="step-info">
+          <span id="stepTitle" class="step-title-text"></span>
+          <span id="stepDesc" class="step-desc-text"></span>
+        </div>
       </div>
 
 
@@ -347,6 +391,13 @@
         </div>
       </div>
 
+      <!-- Step Navigation -->
+      <div class="step-navigation" id="stepNavigation">
+        <button class="step-nav-btn prev" id="prevBtn" onclick="goToPrevStep()" type="button">→ السابق</button>
+        <div class="step-nav-center"><span id="stepCounter" class="step-counter"></span></div>
+        <button class="step-nav-btn next" id="nextBtn" onclick="goToNextStep()" type="button">التالي ←</button>
+      </div>
+
       <!-- Action Buttons -->
       <div class="actions-container">
         <button class="btn-generate" id="generateBtn" type="button">✨ Generate Portfolio</button>
@@ -437,6 +488,21 @@
         <button class="btn-interview" onclick="generateInterviewPrep()" id="interviewBtn" type="button">🎤 جهزني للـ Interview</button>
         <div id="interviewPanel" class="hidden"></div>
 
+        <!-- AI Content Editor -->
+        <div class="form-section ai-editor-section">
+          <div class="section-header">
+            <div class="section-icon">🤖</div>
+            <h2 class="section-title">AI Content Assistant</h2>
+          </div>
+          <div class="field">
+            <label for="aiPromptInput">اكتب التعديل اللي عايزه</label>
+            <textarea id="aiPromptInput" class="ai-prompt-input" rows="3" placeholder="مثال: عدّل البايو ليكون أكثر احترافية... أو: أضف مهارات frontend..."></textarea>
+          </div>
+          <button class="btn-ai-edit" id="aiEditBtn" type="button" onclick="aiEditContent()">✨ نفّذ التعديل</button>
+          <div id="aiResultPanel" class="hidden"></div>
+          <p class="ai-note-small">💡 يعمل بأفضل شكل مع Claude API Key، وبدونه يقدم نصائح مجانية</p>
+        </div>
+
         <!-- Version History -->
         <div class="version-panel" id="versionPanel">
           <div class="version-header" id="versionHeaderBtn">
@@ -453,6 +519,11 @@
     <!-- =================== PREVIEW COLUMN =================== -->
     <div class="preview-column" id="previewColumn">
       <div class="preview-label"><span class="dot"></span> Live Preview</div>
+      <!-- Demo Banner -->
+      <div id="demoBanner" class="demo-banner" style="display:none">
+        <span>👀 هذا مثال توضيحي — ابدأ بكتابة اسمك لتري portfolio بتاعك!</span>
+        <button onclick="hideDemoPreview(); document.getElementById('fullName').focus()">ابدأ الآن ←</button>
+      </div>
       <div class="preview-frame-wrapper">
         <iframe id="previewFrame" title="Portfolio Preview" sandbox="allow-same-origin allow-scripts"></iframe>
       </div>
@@ -477,6 +548,17 @@
       <span>Export</span>
     </button>
   </nav>
+
+  </div><!-- /mainApp -->
+
+  <!-- FAB - Floating Generate Button -->
+  <div class="fab-container" id="fabContainer">
+    <div class="fab-score-mini" id="fabScore">0%</div>
+    <button class="fab-btn" onclick="document.getElementById('generateBtn').click()" type="button">
+      <span class="fab-icon">✨</span>
+      <span class="fab-text">Generate</span>
+    </button>
+  </div>
 
   <!-- Template scripts -->
   <script src="templates/modern.js"></script>
